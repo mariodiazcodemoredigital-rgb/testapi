@@ -7,25 +7,23 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiar la solución y el proyecto (basado en tu imagen de Git)
-COPY TestAPI.sln ./
-COPY testapi/TestAPI.csproj ./testapi/
+# COPIAR TODO EL CONTENIDO PRIMERO
+# Esto evita errores de "archivo no encontrado" si las rutas de carpetas varían
+COPY . .
 
-# Restaurar paquetes
+# RESTAURAR USANDO EL ARCHIVO DE SOLUCIÓN
+# Docker buscará el archivo .sln en la raíz automáticamente
 RUN dotnet restore
 
-# Copiar el resto del código de la carpeta
-COPY testapi/ ./testapi/
-
-# Publicar el proyecto
-RUN dotnet publish testapi/TestAPI.csproj -c Release -o /app/publish --no-restore
+# PUBLICAR
+# Buscamos el proyecto dentro de la subcarpeta y lo publicamos
+RUN dotnet publish **/TestAPI.csproj -c Release -o /app/publish
 
 # 3. Imagen final
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Configurar puerto para Easypanel (usualmente puerto 80)
 ENV ASPNETCORE_URLS=http://+:80
 
 ENTRYPOINT ["dotnet", "TestAPI.dll"]
