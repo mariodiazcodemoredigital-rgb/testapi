@@ -1,25 +1,31 @@
-# Etapa de compilación
+# 1. Imagen base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+# 2. SDK para compilar
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# 1. Copiamos el archivo de proyecto entrando a la carpeta testapi
-# El primer "testapi/" es el origen en GitHub, el "./" es el destino en Docker
-COPY ["testapi/TestAPI.csproj", "./"]
-RUN dotnet restore "TestAPI.csproj"
+# Copiar la solución y el proyecto (basado en tu imagen de Git)
+COPY TestAPI.sln ./
+COPY testapi/TestAPI.csproj ./testapi/
 
-# 2. Copiamos todo el contenido de la carpeta testapi
-COPY ["testapi/", "./"]
+# Restaurar paquetes
+RUN dotnet restore
 
-# 3. Compilamos
-RUN dotnet publish "TestAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Copiar el resto del código de la carpeta
+COPY testapi/ ./testapi/
 
-# Etapa final (Imagen ligera)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+# Publicar el proyecto
+RUN dotnet publish testapi/TestAPI.csproj -c Release -o /app/publish --no-restore
+
+# 3. Imagen final
+FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Exponer puerto para Easypanel
+# Configurar puerto para Easypanel (usualmente puerto 80)
 ENV ASPNETCORE_URLS=http://+:80
-EXPOSE 80
 
 ENTRYPOINT ["dotnet", "TestAPI.dll"]
