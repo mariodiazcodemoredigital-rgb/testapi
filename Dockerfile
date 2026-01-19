@@ -1,19 +1,22 @@
-# Imagen base de .NET SDK para compilar
+# Etapa de compilación
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /app
+WORKDIR /src
 
-# Copiar archivos y restaurar dependencias
-COPY . ./
-RUN dotnet restore
+# Copiar archivos .csproj y restaurar dependencias
+COPY ["TestAPI.csproj", "./"]
+RUN dotnet restore "TestAPI.csproj"
 
-# Compilar y publicar
-RUN dotnet publish -c Release -o out
+# Copiar el resto del código y compilar
+COPY . .
+RUN dotnet publish "TestAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Imagen final ligera para correr la app
+# Etapa final (Imagen ligera)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app/out .
+COPY --from=build /app/publish .
 
-# Puerto que usa ASP.NET por defecto
+# Exponer el puerto que usa Easypanel por defecto
+ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
+
 ENTRYPOINT ["dotnet", "testapi.dll"]
