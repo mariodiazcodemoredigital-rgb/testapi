@@ -17,7 +17,7 @@ RUN dotnet restore
 
 # PUBLICAR
 # Buscamos el proyecto dentro de la subcarpeta y lo publicamos
-RUN dotnet publish **/TestAPI.csproj -c Release -o /app/publish
+RUN dotnet publish **/testapi.csproj -c Release -o /app/publish
 
 # 3. Imagen final
 FROM base AS final
